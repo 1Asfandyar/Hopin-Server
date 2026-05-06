@@ -4,14 +4,27 @@ module Api
       include Apipie::DSL
       include Pundit::Authorization
 
+      JWT_SCOPE = :user
+      JWT_AUDIENCE = nil
+
       rescue_from ActiveRecord::RecordNotFound, with: :not_found_response
       rescue_from Pundit::NotAuthorizedError, with: :forbidden_response
       rescue_from StandardError, with: :handle_standard_error
 
       private
 
-      def require_current_user!
+      def authenticate_user!
         unauthorized_response unless current_user
+      end
+
+      def require_current_user!
+        authenticate_user!
+      end
+
+      def current_user
+        return @current_user if defined?(@current_user)
+
+        @current_user = decode_current_user
       end
 
       def unauthorized_response(message = 'You are unauthorized to view this resource')
@@ -43,6 +56,23 @@ module Api
         return errors if errors.is_a?(Hash) && errors.key?(:errors)
 
         { errors: Array(errors) }
+      end
+
+      def decode_current_user
+        token = bearer_token
+        return nil if token.blank?
+
+        Warden::JWTAuth::UserDecoder.new.call(token, JWT_SCOPE, JWT_AUDIENCE)
+      rescue JWT::DecodeError,
+             Warden::JWTAuth::Errors::RevokedToken,
+             Warden::JWTAuth::Errors::NilUser,
+             Warden::JWTAuth::Errors::WrongScope,
+             Warden::JWTAuth::Errors::WrongAud
+        nil
+      end
+
+      def bearer_token
+        Warden::JWTAuth::HeaderParser.from_env(request.env)
       end
     end
   end

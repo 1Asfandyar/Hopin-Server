@@ -1,8 +1,10 @@
 ActiveAdmin.register AdminUser do
+  actions :index, :show, :edit, :update
+  config.batch_actions = false
+
   permit_params :email, :password, :password_confirmation
 
   index do
-    selectable_column
     id_column
     column :email
     column :created_at
@@ -21,4 +23,14 @@ ActiveAdmin.register AdminUser do
     f.actions
   end
 
+  controller do
+    def update
+      if params.dig(:admin_user, :password).blank?
+        params[:admin_user].delete(:password)
+        params[:admin_user].delete(:password_confirmation)
+      end
+
+      super
+    end
+  end
 end

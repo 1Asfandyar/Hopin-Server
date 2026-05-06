@@ -15,7 +15,7 @@ class UserPolicy
   end
 
   def create?
-    true
+    current_user.present?
   end
 
   def update?

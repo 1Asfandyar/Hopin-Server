@@ -1,7 +1,7 @@
 module Api
   module V1
     class UsersController < ApiController
-      before_action :require_current_user!, except: [:create]
+      before_action :require_current_user!
 
       resource_description do
         short 'Users management'
