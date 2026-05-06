@@ -1,7 +1,7 @@
 module Api
   module V1
-    class UsersController < BaseController
-      skip_before_action :authenticate_user!, only: [:create]
+    class UsersController < ApiController
+      before_action :require_current_user!, except: [:create]
 
       resource_description do
         short 'Users management'
@@ -11,15 +11,22 @@ module Api
 
       api :GET, '/v1/users', 'List all users'
       def index
-        @users = User.all
-        json_response(@users)
+        Api::V1::Users::Index.call(params.to_unsafe_h, current_user: current_user) do |result|
+          result.success { |data| render json: data, status: :ok }
+          result.failure(:forbidden) { forbidden_response }
+          result.failure { |errors| unprocessable_entity(errors) }
+        end
       end
 
       api :GET, '/v1/users/:id', 'Get user details'
       param :id, Integer, required: true, description: 'User ID'
       def show
-        @user = User.find(params[:id])
-        json_response(@user)
+        Api::V1::Users::Show.call(params.to_unsafe_h, current_user: current_user) do |result|
+          result.success { |data| render json: data, status: :ok }
+          result.failure(:not_found) { not_found_response }
+          result.failure(:forbidden) { forbidden_response }
+          result.failure { |errors| unprocessable_entity(errors) }
+        end
       end
 
       api :POST, '/v1/users', 'Create a new user'
@@ -30,11 +37,10 @@ module Api
         param :role, String, description: 'User role'
       end
       def create
-        @user = User.new(user_params)
-        if @user.save
-          json_response(@user, 201)
-        else
-          json_response({ errors: @user.errors.full_messages }, 422)
+        Api::V1::Users::Create.call(params.to_unsafe_h, current_user: current_user) do |result|
+          result.success { |data| render json: data, status: :created }
+          result.failure(:forbidden) { forbidden_response }
+          result.failure { |errors| unprocessable_entity(errors) }
         end
       end
 
@@ -45,26 +51,23 @@ module Api
         param :password, String, description: 'User password'
       end
       def update
-        @user = User.find(params[:id])
-        if @user.update(user_params)
-          json_response(@user)
-        else
-          json_response({ errors: @user.errors.full_messages }, 422)
+        Api::V1::Users::Update.call(params.to_unsafe_h, current_user: current_user) do |result|
+          result.success { |data| render json: data, status: :ok }
+          result.failure(:not_found) { not_found_response }
+          result.failure(:forbidden) { forbidden_response }
+          result.failure { |errors| unprocessable_entity(errors) }
         end
       end
 
       api :DELETE, '/v1/users/:id', 'Delete user'
       param :id, Integer, required: true, description: 'User ID'
       def destroy
-        @user = User.find(params[:id])
-        @user.destroy
-        json_response({ message: 'User deleted' })
-      end
-
-      private
-
-      def user_params
-        params.require(:user).permit(:email, :password, :password_confirmation, :role)
+        Api::V1::Users::Destroy.call(params.to_unsafe_h, current_user: current_user) do |result|
+          result.success { |data| render json: data, status: :ok }
+          result.failure(:not_found) { not_found_response }
+          result.failure(:forbidden) { forbidden_response }
+          result.failure { |errors| unprocessable_entity(errors) }
+        end
       end
     end
   end

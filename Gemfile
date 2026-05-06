@@ -21,14 +21,22 @@ gem "activeadmin"
 # Authorization
 gem "pundit"
 
+# Operation pattern
+gem "dry-matcher"
+gem "dry-monads"
+gem "dry-types"
+gem "dry-validation"
+
 # Serialization
 gem "active_model_serializers"
+gem "blueprinter"
 
 # API Documentation
 gem "apipie-rails"
 
 # Database
 gem "kaminari"
+gem "pagy"
 
 group :development, :test do
   gem "byebug", platforms: [:mri, :mingw, :x64_mingw]

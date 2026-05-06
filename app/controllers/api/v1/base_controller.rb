@@ -1,8 +1,6 @@
 module Api
   module V1
-    class BaseController < ActionController::API
-      include Apipie::DSL
-      
+    class BaseController < ApiController
       before_action :authenticate_user!
 
       rescue_from ActiveRecord::RecordNotFound do |_exception|
