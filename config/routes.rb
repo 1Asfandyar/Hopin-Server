@@ -1,4 +1,14 @@
 Rails.application.routes.draw do
+  apipie
+  devise_for :users
+  devise_for :admin_users, ActiveAdmin::Devise.config
+
+  ActiveAdmin.application.load!
+  admin_resources = ActiveAdmin.application.namespaces[:admin].resources
+  comment_resource = admin_resources[ActiveAdmin::Comment] if defined?(ActiveAdmin::Comment)
+  admin_resources.instance_variable_get(:@collection).delete(comment_resource.resource_name) if comment_resource
+  ActiveAdmin::Router.new(router: self, namespaces: ActiveAdmin.application.namespaces).apply
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -7,4 +17,13 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+
+  namespace :api do
+    namespace :v1 do
+      devise_for :users, only: [:sessions, :registrations]
+      resources :users
+      resources :admin_users
+      resources :jwt_blacklists, only: [:index, :show, :create, :destroy]
+    end
+  end
 end
