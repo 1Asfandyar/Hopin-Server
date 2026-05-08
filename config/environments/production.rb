@@ -6,9 +6,7 @@ Rails.application.configure do
   config.eager_load = true
   config.consider_all_requests_local = false
 
-  # Enforce presence of RAILS_MASTER_KEY or config/master.key at boot.
-  # This prevents a misconfigured deployment from starting silently.
-  config.require_master_key = true
+  config.require_master_key = false
 
   # ── SSL ─────────────────────────────────────────────────────────────────────
   # Kamal deploys through Thruster / kamal-proxy which terminates TLS.

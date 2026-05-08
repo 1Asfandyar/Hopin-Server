@@ -28,6 +28,7 @@ RUN apt-get update -qq && \
       build-essential \
       git \
       libpq-dev \
+      libyaml-dev \
       pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -47,8 +48,6 @@ COPY . .
 RUN bundle exec bootsnap precompile app/ lib/
 
 # Precompile assets (ActiveAdmin CSS/JS via Sprockets).
-# SECRET_KEY_BASE_DUMMY=1 prevents Rails from looking for a real secret key
-# during the asset pipeline — the real key is only needed at runtime.
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # ── Final / runtime stage ──────────────────────────────────────────────────────
