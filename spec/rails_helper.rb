@@ -30,7 +30,7 @@ end
 
 # ── RSpec configuration ────────────────────────────────────────────────────
 RSpec.configure do |config|
-  config.fixture_paths = [Rails.root.join("spec/fixtures")]
+  config.fixture_paths = [ Rails.root.join("spec/fixtures") ]
   config.use_transactional_fixtures = true
 
   # Infer spec type from file location (e.g. spec/models → type: :model).
