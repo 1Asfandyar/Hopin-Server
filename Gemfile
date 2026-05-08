@@ -47,6 +47,7 @@ group :development, :test do
   gem "debug", platforms: %i[mri windows jruby]  # replaces byebug (broken on Ruby 3.4)
   gem "dotenv-rails"
   gem "rspec-rails"
+  gem "rspec_junit_formatter"
   gem "factory_bot_rails"
   gem "faker"
   gem "brakeman", require: false          # static security analysis
