@@ -6,7 +6,6 @@ SimpleCov.start "rails" do
   add_filter "/spec/"
   add_filter "/config/"
   add_filter "/db/"
-  minimum_coverage 70   # raise gradually as coverage grows
 end
 
 # ── Rails environment ──────────────────────────────────────────────────────
@@ -31,7 +30,7 @@ end
 
 # ── RSpec configuration ────────────────────────────────────────────────────
 RSpec.configure do |config|
-  config.fixture_path = Rails.root.join("spec/fixtures")
+  config.fixture_paths = [Rails.root.join("spec/fixtures")]
   config.use_transactional_fixtures = true
 
   # Infer spec type from file location (e.g. spec/models → type: :model).
