@@ -8,5 +8,6 @@ namespace :api do
     patch "me", to: "users#update_me"
 
     resources :accounts
+    resources :categories
   end
 end
