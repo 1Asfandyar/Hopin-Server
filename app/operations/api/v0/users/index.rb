@@ -1,8 +1,8 @@
-module Api::V1::Users
+module Api::V0::Users
   class Index
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         optional(:query).maybe(:string)
       end
@@ -15,7 +15,7 @@ module Api::V1::Users
 
       yield authorize
 
-      Success(success: true, users: Api::V1::UserSerializer.render_as_hash(filtered_users))
+      Success(success: true, users: Api::V0::UserSerializer.render_as_hash(filtered_users))
     end
 
     private

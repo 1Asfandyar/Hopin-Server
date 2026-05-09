@@ -1,4 +1,4 @@
-module Api::V1
+module Api::V0
   class UserSerializer < Blueprinter::Base
     identifier :id
 

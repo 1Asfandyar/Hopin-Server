@@ -1,8 +1,8 @@
-module Api::V1::Users
+module Api::V0::Users
   class UpdateMe
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         optional(:full_name).filled(:string)
         optional(:mobile_number).filled(:string)
@@ -21,7 +21,7 @@ module Api::V1::Users
 
       Success(
         success: true,
-        user: Api::V1::UserSerializer.render_as_hash(current_user)
+        user: Api::V0::UserSerializer.render_as_hash(current_user)
       )
     end
 

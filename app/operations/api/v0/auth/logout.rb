@@ -1,6 +1,6 @@
-module Api::V1::Auth
+module Api::V0::Auth
   class Logout
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
     def call(_params = {}, token:)
       return Failure(:unauthorized) if token.blank?

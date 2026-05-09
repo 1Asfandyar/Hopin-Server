@@ -1,4 +1,4 @@
-module Api::V1
+module Api::V0
   class ApiController < ActionController::API
     include Apipie::DSL
     include Pundit::Authorization
@@ -9,6 +9,8 @@ module Api::V1
     rescue_from ActiveRecord::RecordNotFound, with: :not_found_response
     rescue_from Pundit::NotAuthorizedError, with: :forbidden_response
     rescue_from StandardError, with: :handle_standard_error
+
+    before_action :require_current_user!
 
     private
 
@@ -52,7 +54,10 @@ module Api::V1
     end
 
     def normalize_errors(errors)
-      return errors if errors.is_a?(Hash) && errors.key?(:errors)
+      if errors.is_a?(Hash) && errors.key?(:errors)
+        inner = errors[:errors]
+        return inner.is_a?(Hash) ? { errors: [inner] } : errors
+      end
 
       { errors: Array(errors) }
     end

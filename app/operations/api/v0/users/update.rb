@@ -1,8 +1,8 @@
-module Api::V1::Users
+module Api::V0::Users
   class Update
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         required(:id).filled(:integer)
         optional(:email).filled(:string)
@@ -25,7 +25,7 @@ module Api::V1::Users
       yield authorize
       yield update_user
 
-      Success(success: true, user: Api::V1::UserSerializer.render_as_hash(user))
+      Success(success: true, user: Api::V0::UserSerializer.render_as_hash(user))
     end
 
     private

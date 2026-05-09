@@ -1,8 +1,8 @@
-module Api::V1::Users
+module Api::V0::Users
   class Create
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         required(:email).filled(:string)
         required(:password).filled(:string)
@@ -21,7 +21,7 @@ module Api::V1::Users
       yield authorize
       yield save_user
 
-      Success(success: true, user: Api::V1::UserSerializer.render_as_hash(user))
+      Success(success: true, user: Api::V0::UserSerializer.render_as_hash(user))
     end
 
     private

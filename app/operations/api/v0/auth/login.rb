@@ -1,8 +1,8 @@
-module Api::V1::Auth
+module Api::V0::Auth
   class Login
-    include Api::V1::ApplicationOperation
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         required(:email).filled(:string)
         required(:password).filled(:string)
@@ -29,8 +29,8 @@ module Api::V1::Auth
     def auth_payload(user)
       token, payload = Warden::JWTAuth::UserEncoder.new.call(
         user,
-        Api::V1::ApiController::JWT_SCOPE,
-        Api::V1::ApiController::JWT_AUDIENCE
+        Api::V0::ApiController::JWT_SCOPE,
+        Api::V0::ApiController::JWT_AUDIENCE
       )
 
       {
@@ -38,7 +38,7 @@ module Api::V1::Auth
         token: token,
         authorization: "Bearer #{token}",
         expires_at: Time.zone.at(payload["exp"]),
-        user: Api::V1::UserSerializer.render_as_hash(user)
+        user: Api::V0::UserSerializer.render_as_hash(user)
       }
     end
   end

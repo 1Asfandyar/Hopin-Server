@@ -1,27 +1,27 @@
-module Api::V1
-  class JwtBlacklistsController < BaseController
+module Api::V0
+  class JwtBlacklistsController < ApiController
     resource_description do
       short "JWT token blacklist management"
       description "Manage JWT token revocation and blacklist"
-      api_version "v1"
+      api_version "v0"
     end
 
-    api :GET, "/v1/jwt_blacklists", "List all blacklisted JWT tokens"
+    api :GET, "/v0/jwt_blacklists", "List all blacklisted JWT tokens"
     def index
       authorize JwtBlacklist
       @jwt_blacklists = JwtBlacklist.all
-      json_response(@jwt_blacklists)
+      render json: @jwt_blacklists
     end
 
-    api :GET, "/v1/jwt_blacklists/:id", "Get JWT blacklist entry details"
+    api :GET, "/v0/jwt_blacklists/:id", "Get JWT blacklist entry details"
     param :id, Integer, required: true, description: "Blacklist entry ID"
     def show
       @jwt_blacklist = JwtBlacklist.find(params[:id])
       authorize @jwt_blacklist
-      json_response(@jwt_blacklist)
+      render json: @jwt_blacklist
     end
 
-    api :POST, "/v1/jwt_blacklists", "Create a new JWT blacklist entry"
+    api :POST, "/v0/jwt_blacklists", "Create a new JWT blacklist entry"
     param :jwt_blacklist, Hash, required: true, description: "JWT blacklist attributes" do
       param :jti, String, required: true, description: "JWT ID (unique identifier)"
       param :exp, Integer, description: "Expiration timestamp (Unix time)"
@@ -30,19 +30,19 @@ module Api::V1
       authorize JwtBlacklist
       @jwt_blacklist = JwtBlacklist.new(jwt_blacklist_params)
       if @jwt_blacklist.save
-        json_response(@jwt_blacklist, 201)
+        render json: @jwt_blacklist, status: :created
       else
-        json_response({ errors: @jwt_blacklist.errors.full_messages }, 422)
+        render json: { errors: @jwt_blacklist.errors.full_messages }, status: :unprocessable_entity
       end
     end
 
-    api :DELETE, "/v1/jwt_blacklists/:id", "Delete JWT blacklist entry"
+    api :DELETE, "/v0/jwt_blacklists/:id", "Delete JWT blacklist entry"
     param :id, Integer, required: true, description: "Blacklist entry ID"
     def destroy
       @jwt_blacklist = JwtBlacklist.find(params[:id])
       authorize @jwt_blacklist
       @jwt_blacklist.destroy
-      json_response({ message: "JWT blacklist entry deleted" })
+      render json: { message: "JWT blacklist entry deleted" }
     end
 
     private

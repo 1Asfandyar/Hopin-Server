@@ -2,7 +2,7 @@ require "dry/matcher/result_matcher"
 require "dry/monads"
 require "dry/monads/do"
 
-module Api::V1
+module Api::V0
   module ApplicationOperation
     def self.included(base)
       base.include Dry::Monads[:result, :do]

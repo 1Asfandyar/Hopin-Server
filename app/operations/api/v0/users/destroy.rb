@@ -1,8 +1,8 @@
-module Api::V1::Users
-  class Show
-    include Api::V1::ApplicationOperation
+module Api::V0::Users
+  class Destroy
+    include Api::V0::ApplicationOperation
 
-    class Contract < Api::V1::ApplicationContract
+    class Contract < Api::V0::ApplicationContract
       params do
         required(:id).filled(:integer)
       end
@@ -17,7 +17,8 @@ module Api::V1::Users
 
       yield authorize
 
-      Success(success: true, user: Api::V1::UserSerializer.render_as_hash(user))
+      user.destroy
+      Success(success: true, message: "User deleted")
     end
 
     private
@@ -25,7 +26,7 @@ module Api::V1::Users
     attr_reader :current_user, :user
 
     def authorize
-      UserPolicy.new(current_user, user).show? ? Success() : Failure(:forbidden)
+      UserPolicy.new(current_user, user).destroy? ? Success() : Failure(:forbidden)
     end
   end
 end

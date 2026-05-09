@@ -1,6 +1,6 @@
 require "dry/validation"
 
-module Api::V1
+module Api::V0
   class ApplicationContract < Dry::Validation::Contract
     config.messages.backend = :i18n
 
