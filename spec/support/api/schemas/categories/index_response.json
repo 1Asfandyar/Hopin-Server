@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["success", "categories"],
+  "properties": {
+    "success": { "type": "boolean", "enum": [true] },
+    "categories": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/category" }
+    }
+  },
+  "definitions": {
+    "category": {
+      "type": "object",
+      "required": ["id", "name", "category_type", "user_id", "created_at", "updated_at"],
+      "properties": {
+        "id":            { "type": "integer" },
+        "name":          { "type": "string" },
+        "category_type": { "type": "string", "enum": ["expense", "income"] },
+        "user_id":       { "type": "integer" },
+        "created_at":    { "type": "string" },
+        "updated_at":    { "type": "string" }
+      }
+    }
+  }
+}
