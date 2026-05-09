@@ -1,0 +1,11 @@
+# annotaterb configuration — models only
+position_in_class: before
+show_indexes: true
+show_foreign_keys: true
+exclude_tests: true
+exclude_fixtures: true
+exclude_factories: true
+exclude_serializers: true
+exclude_sti_subclasses: false
+ignore_model_subdirects: false
+classified_sort: true

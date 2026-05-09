@@ -85,6 +85,9 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    annotaterb (4.22.0)
+      activerecord (>= 6.0.0)
+      activesupport (>= 6.0.0)
     apipie-rails (1.5.0)
       actionpack (>= 5.0)
       activesupport (>= 5.0)
@@ -509,6 +512,7 @@ PLATFORMS
 
 DEPENDENCIES
   activeadmin
+  annotaterb
   apipie-rails
   blueprinter
   bootsnap

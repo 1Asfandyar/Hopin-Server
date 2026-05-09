@@ -57,6 +57,7 @@ end
 group :development do
   gem "web-console"
   gem "rubocop-rails-omakase", require: false  # Omakase Rails style guide
+  gem "annotaterb"                             # schema annotations on models
 end
 
 group :test do
