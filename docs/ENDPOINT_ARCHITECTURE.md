@@ -131,11 +131,13 @@ end
 
 One operation = one controller action. Each operation:
 
-- Includes `Api::V1::ApplicationOperation` (provides `validate_contract`, `Success`, `Failure`, `yield`).
+- Includes `Api::V1::ApplicationOperation` (provides `Success`, `Failure`, `yield`).
 - Has a nested `Contract` class for param validation.
+- **`ApplicationOperation.call` automatically runs the `Contract` before the instance `call` is ever invoked.** The `call` method always receives already-validated params — do not call `validate_contract` manually inside an operation.
+- Params arrive with **symbol keys only** — never write `params[:id] || params["id"]` or `params.fetch(:key, params.fetch("key", {}))`.
 - Has a single **public** `call` method that sequences all steps.
 - Has all helper methods as **private**.
-- Uses `attr_reader` in the private section to hold state instead of passing it between methods.
+- Stores validated params as `@params` via `attr_reader`; builds model attributes with `params.slice(...)`.
 - Returns `Failure(:symbol)` for authorization/not-found errors and `Failure(errors: hash)` for validation errors.
 - Returns `Success(data_hash)` on the happy path — the hash is rendered directly as JSON.
 
@@ -154,11 +156,10 @@ module Api::V1::Posts
     end
 
     def call(params, current_user:)
+      @params       = params
       @current_user = current_user
-      validated    = yield validate_contract(post_params(params))
-      @attributes  = validated
 
-      yield authorize
+      yield authorize?
       yield persist
 
       Success(
@@ -169,19 +170,19 @@ module Api::V1::Posts
 
     private
 
-    attr_reader :current_user, :attributes, :post
+    attr_reader :current_user, :params, :post
 
-    def post_params(params)
-      params.fetch(:post, params.fetch("post", {}))
-    end
-
-    def authorize
+    def authorize?
       PostPolicy.new(current_user, Post.new).create? ? Success() : Failure(:forbidden)
     end
 
     def persist
-      @post = Post.new(attributes.merge(author: current_user))
+      @post = Post.new(post_params)
       post.save ? Success(post) : Failure(errors: post.errors.to_hash)
+    end
+
+    def post_params
+      params.slice(:title, :body, :published).merge(author: current_user)
     end
   end
 end
@@ -196,10 +197,10 @@ end
 
 ### When authorization is needed
 
-Add an `authorize` step **after** contract validation but **before** any writes. Call the Pundit policy directly — do not use `authorize` from Pundit's controller helpers inside an operation.
+Add an `authorize?` step **before** any writes. Call the Pundit policy directly — do not use `authorize` from Pundit's controller helpers inside an operation.
 
 ```ruby
-def authorize
+def authorize?
   PostPolicy.new(current_user, record).update? ? Success() : Failure(:forbidden)
 end
 ```
@@ -223,7 +224,7 @@ class Contract < Api::V1::ApplicationContract
 end
 ```
 
-`validate_contract` is provided by `ApplicationOperation`. It returns `Success(params_hash)` or `Failure(errors: hash)`.
+`ApplicationOperation.call` (the class method) automatically runs the contract before the instance `call` method is invoked. If validation fails, `Failure(errors: hash)` is returned immediately — the operation body never executes. You never call `validate_contract` directly inside an operation.
 
 ---
 
@@ -438,8 +439,11 @@ JSON schema for the success response (`spec/support/api/schemas/posts/create_res
 
 - [ ] Route added to `config/routes.rb`
 - [ ] Controller action calls operation, maps all failure symbols
-- [ ] Operation: contract, `call`, private steps, `attr_reader`
-- [ ] Authorization step present (if endpoint is protected)
+- [ ] Operation: contract, `call`, private steps, `attr_reader` (stores `@params`, not `@attributes`)
+- [ ] No `validate_contract` call inside the operation — validation is automatic
+- [ ] No string-key fallbacks — use `params[:key]` only, never `params[:key] || params["key"]`
+- [ ] No nested param unwrapping — contract receives flat params directly
+- [ ] Authorization step named `authorize?`, placed before any writes
 - [ ] Serializer exposes all fields needed (default view only — no named views)
 - [ ] Business logic in service if reusable; inline if not
 - [ ] JSON schema files created for success and (shared) error responses

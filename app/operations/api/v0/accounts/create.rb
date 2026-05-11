@@ -12,11 +12,10 @@ module Api::V0::Accounts
     end
 
     def call(params, current_user:)
+      @params       = params
       @current_user = current_user
-      validated    = yield validate_contract(account_params(params))
-      @attributes  = validated.compact
 
-      yield authorize
+      yield authorize?
       yield persist
 
       Success(
@@ -27,19 +26,30 @@ module Api::V0::Accounts
 
     private
 
-    attr_reader :current_user, :attributes, :account
+    attr_reader :current_user, :params, :account
 
-    def account_params(params)
-      params.fetch(:account, params.fetch("account", {}))
-    end
-
-    def authorize
+    def authorize?
       AccountPolicy.new(current_user, Account.new).create? ? Success() : Failure(:forbidden)
     end
 
+    def validate_currency
+      return Success() if params[:currency_id].nil?
+      Currency.exists?(id: params[:currency_id]) ? Success() : Failure(:invalid_currency)
+    end
+
     def persist
-      @account = Account.new(attributes.merge(user: current_user))
+      @account = Account.new(account_params)
       account.save ? Success(account) : Failure(errors: account.errors.to_hash)
+    end
+
+    def account_params
+      {
+        name: params[:name],
+        current_balance_cents: params[:current_balance_cents] || 0,
+        initial_balance_cents: params[:initial_balance_cents] || 0,
+        currency_id: params[:currency_id] || Currency.find_by(code: "USD")&.id,
+        user: current_user
+      }
     end
   end
 end
