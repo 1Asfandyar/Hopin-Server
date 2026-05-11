@@ -11,7 +11,9 @@ module Api::V0
 
     module ClassMethods
       def call(params = {}, **context, &block)
-        result = new.call(params, **context)
+        instance = new
+        validation = instance.send(:validate_contract, params)
+        result = validation.failure? ? validation : instance.call(validation.value!, **context)
         return result unless block
 
         Dry::Matcher::ResultMatcher.call(result, &block)

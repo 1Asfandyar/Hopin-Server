@@ -12,7 +12,6 @@ module Api::V0::Auth
     end
 
     def call(params)
-      params = yield validate_contract(params)
       user = User.find_for_authentication(email: params[:email])
 
       return Failure(:unauthorized) unless user&.valid_password?(params[:password])

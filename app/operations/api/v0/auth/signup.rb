@@ -15,7 +15,6 @@ module Api::V0::Auth
     end
 
     def call(params)
-      params = yield validate_contract(params)
       user = User.new(params.slice(:full_name, :mobile_number, :email, :password, :password))
 
       yield save_user(user)
