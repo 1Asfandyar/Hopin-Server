@@ -12,7 +12,7 @@ RSpec.describe "Api::V0::Groups", type: :request do
 
   describe "POST /api/v0/groups/:id/members" do
     let(:endpoint)  { "/api/v0/groups/#{group.id}/members" }
-    let(:user_ids)  { [other_user.id] }
+    let(:user_ids)  { [ other_user.id ] }
 
     let(:request_params) { { user_ids: user_ids } }
 
@@ -36,7 +36,7 @@ RSpec.describe "Api::V0::Groups", type: :request do
 
     context "when adding a user already in the group" do
       let(:request_headers) { headers.merge(auth_headers(user)) }
-      let(:user_ids)        { [user.id] }
+      let(:user_ids)        { [ user.id ] }
 
       it "returns 200 without duplicating the membership" do
         expect(response).to have_http_status(:ok)
@@ -74,7 +74,7 @@ RSpec.describe "Api::V0::Groups", type: :request do
 
     context "when a user_id does not exist" do
       let(:request_headers) { headers.merge(auth_headers(user)) }
-      let(:user_ids)        { [0] }
+      let(:user_ids)        { [ 0 ] }
 
       it "returns 422 and matches error schema" do
         expect(response).to have_http_status(:unprocessable_entity)
