@@ -15,7 +15,7 @@ module Api::V0::Accounts
       @params       = params
       @current_user = current_user
 
-      yield authorize
+      yield authorize?
       yield persist
 
       Success(
@@ -28,7 +28,7 @@ module Api::V0::Accounts
 
     attr_reader :current_user, :params, :account
 
-    def authorize
+    def authorize?
       AccountPolicy.new(current_user, Account.new).create? ? Success() : Failure(:forbidden)
     end
 
@@ -47,7 +47,7 @@ module Api::V0::Accounts
         name: params[:name],
         current_balance_cents: params[:current_balance_cents] || 0,
         initial_balance_cents: params[:initial_balance_cents] || 0,
-        currency_id: params[:currency_id],
+        currency_id: params[:currency_id] || Currency.find_by(code: "USD")&.id,
         user: current_user
       }
     end
