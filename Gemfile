@@ -37,6 +37,7 @@ gem "blueprinter"
 
 # ─── API Documentation ────────────────────────────────────────────────────────
 gem "apipie-rails"
+gem "redcarpet"               # markdown rendering for Apipie descriptions
 
 # ─── Pagination ───────────────────────────────────────────────────────────────
 gem "kaminari"                # kept — ActiveAdmin depends on it internally
