@@ -12,7 +12,7 @@ module Api::V0::Auth
     end
 
     def call(params)
-      params = yield validate_contract(login_params(params))
+      params = yield validate_contract(params)
       user = User.find_for_authentication(email: params[:email])
 
       return Failure(:unauthorized) unless user&.valid_password?(params[:password])
@@ -21,10 +21,6 @@ module Api::V0::Auth
     end
 
     private
-
-    def login_params(params)
-      params.fetch(:user, params.fetch("user", {}))
-    end
 
     def auth_payload(user)
       token, payload = Warden::JWTAuth::UserEncoder.new.call(

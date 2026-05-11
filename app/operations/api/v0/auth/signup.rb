@@ -15,8 +15,8 @@ module Api::V0::Auth
     end
 
     def call(params)
-      params = yield validate_contract(user_params(params))
-      user = User.new(params.slice(:full_name, :mobile_number, :email, :password, :password_confirmation))
+      params = yield validate_contract(params)
+      user = User.new(params.slice(:full_name, :mobile_number, :email, :password, :password))
 
       yield save_user(user)
 
@@ -24,10 +24,6 @@ module Api::V0::Auth
     end
 
     private
-
-    def user_params(params)
-      params.fetch(:user, params.fetch("user", {}))
-    end
 
     def save_user(user)
       user.save ? Success(user) : Failure(errors: user.errors.to_hash)
