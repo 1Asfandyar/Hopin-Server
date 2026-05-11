@@ -22,3 +22,7 @@ extra_admins = AdminUser.where.not(id: admin.id)
 warn "There are #{extra_admins.count} extra admin accounts. Remove them manually." if extra_admins.exists?
 
 Rails.logger.debug "Admin user ready: #{admin.email}"
+
+Rails.logger.info "Seeding currencies..."
+require_relative 'seed/currency_seed'
+Rails.logger.info "Seeded currencies. Total count: #{Currency.count}"
