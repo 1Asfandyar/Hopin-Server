@@ -9,8 +9,10 @@ module Api::V0::Transactions
         required(:title).filled(:string)
         required(:transaction_type).filled(:string)
         required(:amount_cents).filled(:integer)
-        required(:account_id).filled(:integer)
-        required(:category_id).filled(:integer)
+        optional(:account_id).maybe(:integer)
+        optional(:category_id).maybe(:integer)
+        optional(:from_account_id).maybe(:integer)
+        optional(:to_account_id).maybe(:integer)
         optional(:transaction_date).maybe(:string)
         optional(:note).maybe(:string)
         optional(:currency_id).maybe(:integer)
@@ -29,14 +31,44 @@ module Api::V0::Transactions
       rescue ArgumentError, TypeError
         key.failure("must be a valid ISO 8601 datetime")
       end
+
+      rule(:account_id) do
+        next if values[:transaction_type] == "transfer"
+        key.failure("is required") if value.nil?
+      end
+
+      rule(:category_id) do
+        next if values[:transaction_type] == "transfer"
+        key.failure("is required") if value.nil?
+      end
+
+      rule(:from_account_id) do
+        next unless values[:transaction_type] == "transfer"
+        key.failure("is required for transfer") if value.nil?
+      end
+
+      rule(:to_account_id) do
+        next unless values[:transaction_type] == "transfer"
+        key.failure("is required for transfer") if value.nil?
+      end
+
+      rule(:from_account_id, :to_account_id) do
+        next unless value && values[:to_account_id]
+        key(:to_account_id).failure("must be different from from_account_id") if value == values[:to_account_id]
+      end
     end
 
     def call(params, current_user:)
       @params       = params
       @current_user = current_user
 
-      yield find_account
-      yield find_category
+      if transfer?
+        yield find_from_account
+        yield find_to_account
+      else
+        yield find_account
+        yield find_category
+      end
       yield find_currency
       yield persist
 
@@ -48,11 +80,26 @@ module Api::V0::Transactions
 
     private
 
-    attr_reader :current_user, :params, :account, :category, :currency, :transaction
+    attr_reader :current_user, :params, :account, :from_account, :to_account,
+                :category, :currency, :transaction
+
+    def transfer?
+      params[:transaction_type] == "transfer"
+    end
 
     def find_account
       @account = current_user.accounts.find_by(id: params[:account_id])
       @account ? Success() : Failure(:not_found)
+    end
+
+    def find_from_account
+      @from_account = current_user.accounts.find_by(id: params[:from_account_id])
+      @from_account ? Success() : Failure(:not_found)
+    end
+
+    def find_to_account
+      @to_account = current_user.accounts.find_by(id: params[:to_account_id])
+      @to_account ? Success() : Failure(:not_found)
     end
 
     def find_category
@@ -67,6 +114,24 @@ module Api::V0::Transactions
     end
 
     def persist
+      transfer? ? persist_transfer : persist_personal
+    end
+
+    def persist_transfer
+      result = Transaction::Transfer::Create.call(
+        user:             current_user,
+        title:            params[:title],
+        amount_cents:     params[:amount_cents],
+        from_account:     from_account,
+        to_account:       to_account,
+        transaction_date: Time.parse(params[:transaction_date]),
+        note:             params[:note],
+        currency:         currency
+      )
+      handle_service_result(result)
+    end
+
+    def persist_personal
       result = Transaction::Personal::Create.call(
         user:             current_user,
         title:            params[:title],
@@ -78,6 +143,10 @@ module Api::V0::Transactions
         note:             params[:note],
         currency:         currency
       )
+      handle_service_result(result)
+    end
+
+    def handle_service_result(result)
       if result.success?
         @transaction = result.value!
         Success()

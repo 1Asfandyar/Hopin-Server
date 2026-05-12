@@ -22,4 +22,18 @@ module Transaction::Helpers
     end
     account.save!
   end
+
+  def update_transfer_balance(from_account:, to_account:, amount_cents:)
+    from_account.current_balance_cents -= amount_cents
+    from_account.save!
+    to_account.current_balance_cents += amount_cents
+    to_account.save!
+  end
+
+  def revert_transfer_balance(from_account:, to_account:, amount_cents:)
+    from_account.current_balance_cents += amount_cents
+    from_account.save!
+    to_account.current_balance_cents -= amount_cents
+    to_account.save!
+  end
 end

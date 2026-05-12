@@ -143,13 +143,132 @@ RSpec.describe "Api::V0::Transactions", type: :request do
       end
     end
 
-    context "when transaction_type is transfer" do
+    context "when creating a transfer transaction" do
+      let(:to_account)      { create(:account, user: user, currency: currency) }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params) do
+        {
+          title:            "Wallet top-up",
+          amount_cents:     3000,
+          transaction_type: "transfer",
+          from_account_id:  account.id,
+          to_account_id:    to_account.id,
+          transaction_date: transaction_date
+        }
+      end
+
+      it "returns 201 and matches schema" do
+        expect(response).to have_http_status(:created)
+        expect(response).to match_json_schema("transactions/create_response")
+      end
+
+      it "persists as a transfer with correct account references" do
+        t = Transaction.find_by(title: "Wallet top-up", user_id: user.id)
+        expect(t).to be_present
+        expect(t.transaction_type).to eq("transfer")
+        expect(t.account_id).to eq(account.id)
+        expect(t.transfer_account_id).to eq(to_account.id)
+      end
+
+      it "deducts from from_account and credits to_account" do
+        expect(account.reload.current_balance_cents).to eq(-3000)
+        expect(to_account.reload.current_balance_cents).to eq(3000)
+      end
+    end
+
+    context "when transaction_type is transfer but from_account_id is missing" do
+      let(:to_account)       { create(:account, user: user, currency: currency) }
       let(:request_headers)  { headers.merge(auth_headers(user)) }
       let(:transaction_type) { "transfer" }
+      let(:request_params) do
+        {
+          title:            title,
+          amount_cents:     amount_cents,
+          transaction_type: "transfer",
+          to_account_id:    to_account.id,
+          transaction_date: transaction_date
+        }
+      end
 
       it "returns 422 and matches error schema" do
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when transaction_type is transfer but to_account_id is missing" do
+      let(:request_headers)  { headers.merge(auth_headers(user)) }
+      let(:request_params) do
+        {
+          title:            title,
+          amount_cents:     amount_cents,
+          transaction_type: "transfer",
+          from_account_id:  account.id,
+          transaction_date: transaction_date
+        }
+      end
+
+      it "returns 422 and matches error schema" do
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when from_account_id and to_account_id are the same" do
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params) do
+        {
+          title:            title,
+          amount_cents:     amount_cents,
+          transaction_type: "transfer",
+          from_account_id:  account.id,
+          to_account_id:    account.id,
+          transaction_date: transaction_date
+        }
+      end
+
+      it "returns 422 and matches error schema" do
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when from_account_id does not belong to the current user" do
+      let(:other_account)   { create(:account, currency: currency) }
+      let(:to_account)      { create(:account, user: user, currency: currency) }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params) do
+        {
+          title:            title,
+          amount_cents:     amount_cents,
+          transaction_type: "transfer",
+          from_account_id:  other_account.id,
+          to_account_id:    to_account.id,
+          transaction_date: transaction_date
+        }
+      end
+
+      it "returns 404" do
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "when to_account_id does not belong to the current user" do
+      let(:other_account)   { create(:account, currency: currency) }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params) do
+        {
+          title:            title,
+          amount_cents:     amount_cents,
+          transaction_type: "transfer",
+          from_account_id:  account.id,
+          to_account_id:    other_account.id,
+          transaction_date: transaction_date
+        }
+      end
+
+      it "returns 404" do
+        expect(response).to have_http_status(:not_found)
       end
     end
 

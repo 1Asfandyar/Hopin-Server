@@ -3,11 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Api::V0::Transactions", type: :request do
-  let(:headers)  { { "Content-Type" => "application/json" } }
-  let(:user)     { create(:user) }
-  let(:currency) { create(:currency) }
-  let(:account)  { create(:account, user: user, currency: currency) }
-  let(:category) { create(:category, user: user) }
+  let(:headers)      { { "Content-Type" => "application/json" } }
+  let(:user)         { create(:user) }
+  let(:currency)     { create(:currency) }
+  let(:account)      { create(:account, user: user, currency: currency) }
+  let(:to_account)   { create(:account, user: user, currency: currency) }
+  let(:category)     { create(:category, user: user) }
   let!(:transaction) do
     create(:transaction,
            user:             user,
@@ -19,6 +20,19 @@ RSpec.describe "Api::V0::Transactions", type: :request do
            amount_cents:     5000,
            title:            "Groceries",
            transaction_date: Time.current)
+  end
+  let(:transfer_transaction) do
+    create(:transaction, :transfer,
+           user:             user,
+           account:          account,
+           transfer_account: to_account,
+           currency:         currency,
+           amount_cents:     2000,
+           title:            "Wallet top-up",
+           transaction_date: Time.current).tap do
+      account.update!(current_balance_cents: account.current_balance_cents - 2000)
+      to_account.update!(current_balance_cents: to_account.current_balance_cents + 2000)
+    end
   end
 
   describe "DELETE /api/v0/transactions/:id" do
@@ -71,6 +85,27 @@ RSpec.describe "Api::V0::Transactions", type: :request do
       it "returns 404 and matches error schema" do
         expect(response).to have_http_status(:not_found)
         expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when deleting a transfer transaction" do
+      let(:endpoint)        { "/api/v0/transactions/#{transfer_transaction.id}" }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+
+      it "returns 200 and matches schema" do
+        expect(response).to have_http_status(:ok)
+        expect(response).to match_json_schema("transactions/destroy_response")
+      end
+
+      it "removes the transfer transaction" do
+        expect(Transaction.find_by(id: transfer_transaction.id)).to be_nil
+      end
+
+      it "reverts both account balances" do
+        # account was at -2000 (deducted by transfer setup): revert → 0
+        expect(account.reload.current_balance_cents).to eq(0)
+        # to_account was at +2000 (credited by transfer setup): revert → 0
+        expect(to_account.reload.current_balance_cents).to eq(0)
       end
     end
   end

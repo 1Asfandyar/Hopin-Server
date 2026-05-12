@@ -3,11 +3,12 @@
 require "rails_helper"
 
 RSpec.describe "Api::V0::Transactions", type: :request do
-  let(:headers)   { { "Content-Type" => "application/json" } }
-  let(:user)      { create(:user) }
-  let(:currency)  { create(:currency) }
-  let(:account)   { create(:account, user: user, currency: currency) }
-  let(:category)  { create(:category, user: user) }
+  let(:headers)      { { "Content-Type" => "application/json" } }
+  let(:user)         { create(:user) }
+  let(:currency)     { create(:currency) }
+  let(:account)      { create(:account, user: user, currency: currency) }
+  let(:to_account)   { create(:account, user: user, currency: currency) }
+  let(:category)     { create(:category, user: user) }
   let!(:transaction) do
     create(:transaction,
            user:             user,
@@ -19,6 +20,19 @@ RSpec.describe "Api::V0::Transactions", type: :request do
            amount_cents:     5000,
            title:            "Groceries",
            transaction_date: Time.current)
+  end
+  let(:transfer_transaction) do
+    create(:transaction, :transfer,
+           user:             user,
+           account:          account,
+           transfer_account: to_account,
+           currency:         currency,
+           amount_cents:     2000,
+           title:            "Wallet top-up",
+           transaction_date: Time.current).tap do
+      account.update!(current_balance_cents: account.current_balance_cents - 2000)
+      to_account.update!(current_balance_cents: to_account.current_balance_cents + 2000)
+    end
   end
 
   describe "PATCH /api/v0/transactions/:id" do
@@ -179,6 +193,63 @@ RSpec.describe "Api::V0::Transactions", type: :request do
       it "returns 422 and matches error schema" do
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when updating a transfer transaction amount" do
+      let(:endpoint)        { "/api/v0/transactions/#{transfer_transaction.id}" }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params)  { { amount_cents: 5000 } }
+
+      it "returns 200 and matches schema" do
+        expect(response).to have_http_status(:ok)
+        expect(response).to match_json_schema("transactions/update_response")
+      end
+
+      it "reverts old balance and applies new transfer amount" do
+        # account started at -2000 (from setup), revert (+2000) then apply (-5000) → -5000
+        expect(account.reload.current_balance_cents).to eq(-5000)
+        # to_account started at +2000, revert (-2000) then apply (+5000) → +5000
+        expect(to_account.reload.current_balance_cents).to eq(5000)
+      end
+    end
+
+    context "when updating a transfer transaction's from_account" do
+      let(:new_from_account) { create(:account, user: user, currency: currency) }
+      let(:endpoint)         { "/api/v0/transactions/#{transfer_transaction.id}" }
+      let(:request_headers)  { headers.merge(auth_headers(user)) }
+      let(:request_params)   { { from_account_id: new_from_account.id } }
+
+      it "returns 200 and moves the debit to the new from_account" do
+        expect(response).to have_http_status(:ok)
+        # original account (was -2000): transfer reverted → 0
+        expect(account.reload.current_balance_cents).to eq(0)
+        # new from_account: transfer applied → -2000
+        expect(new_from_account.reload.current_balance_cents).to eq(-2000)
+        # to_account: unchanged net (reverted +2000 then re-applied +2000)
+        expect(to_account.reload.current_balance_cents).to eq(2000)
+      end
+    end
+
+    context "when from_account_id and to_account_id are the same on update" do
+      let(:endpoint)        { "/api/v0/transactions/#{transfer_transaction.id}" }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params)  { { from_account_id: account.id, to_account_id: account.id } }
+
+      it "returns 422 and matches error schema" do
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when from_account_id does not belong to the current user on update" do
+      let(:other_account)   { create(:account, currency: currency) }
+      let(:endpoint)        { "/api/v0/transactions/#{transfer_transaction.id}" }
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params)  { { from_account_id: other_account.id } }
+
+      it "returns 404" do
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

@@ -28,7 +28,11 @@ module Api::V0::Transactions
     end
 
     def execute
-      result = Transaction::Personal::Destroy.call(transaction: transaction)
+      result = if transaction.transfer?
+        Transaction::Transfer::Destroy.call(transaction: transaction)
+      else
+        Transaction::Personal::Destroy.call(transaction: transaction)
+      end
       result.success? ? Success() : Failure(errors: result.failure[:errors])
     end
   end
