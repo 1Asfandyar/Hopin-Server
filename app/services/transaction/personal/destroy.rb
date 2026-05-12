@@ -23,6 +23,6 @@ class Transaction::Personal::Destroy < ApplicationService
     end
     Success(true)
   rescue ActiveRecord::RecordNotDestroyed => e
-    Failure(errors: { base: [e.message] })
+    Failure(errors: { base: [ e.message ] })
   end
 end

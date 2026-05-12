@@ -107,13 +107,13 @@ module Api::V0::Transactions
 
       effective_to_account = to_account || transaction.transfer_account
       if effective_to_account.nil?
-        return Failure(errors: { to_account_id: ["is required for transfer"] })
+        return Failure(errors: { to_account_id: [ "is required for transfer" ] })
       end
 
       effective_from_id = (from_account || transaction.account).id
       effective_to_id   = effective_to_account.id
       if effective_from_id == effective_to_id
-        return Failure(errors: { to_account_id: ["must be different from from_account_id"] })
+        return Failure(errors: { to_account_id: [ "must be different from from_account_id" ] })
       end
 
       Success()

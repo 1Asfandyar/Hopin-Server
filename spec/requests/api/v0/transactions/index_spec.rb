@@ -40,7 +40,7 @@ RSpec.describe "Api::V0::Transactions", type: :request do
         create(:transaction, user: other_user, account: create(:account, user: other_user, currency: currency), currency: currency)
         get endpoint, params: request_params, headers: request_headers
         ids = JSON.parse(response.body)["transactions"].map { |t| t["user_id"] }.uniq
-        expect(ids).to eq([user.id])
+        expect(ids).to eq([ user.id ])
       end
     end
 
@@ -58,7 +58,7 @@ RSpec.describe "Api::V0::Transactions", type: :request do
         get endpoint, params: request_params, headers: request_headers
         expect(response).to have_http_status(:ok)
         account_ids = JSON.parse(response.body)["transactions"].map { |t| t["account_id"] }.uniq
-        expect(account_ids).to eq([account.id])
+        expect(account_ids).to eq([ account.id ])
       end
     end
 
@@ -76,7 +76,7 @@ RSpec.describe "Api::V0::Transactions", type: :request do
         get endpoint, params: request_params, headers: request_headers
         expect(response).to have_http_status(:ok)
         category_ids = JSON.parse(response.body)["transactions"].map { |t| t["category_id"] }.uniq
-        expect(category_ids).to eq([category.id])
+        expect(category_ids).to eq([ category.id ])
       end
     end
 
