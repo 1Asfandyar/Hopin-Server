@@ -67,7 +67,7 @@ jobs:
         env:
           POSTGRES_USER: rupeerally
           POSTGRES_PASSWORD: rupeerally
-          POSTGRES_DB: hopin_test
+          POSTGRES_DB: mom_test
         ports:
           - 5432:5432
         options: >-
@@ -80,7 +80,7 @@ jobs:
       RAILS_ENV: test
       # CI=true causes test.rb to eager_load, catching autoloading issues early.
       CI: true
-      DATABASE_URL: postgres://rupeerally:rupeerally@localhost:5432/hopin_test
+      DATABASE_URL: postgres://rupeerally:rupeerally@localhost:5432/mom_test
       # Add RAILS_MASTER_KEY as a GitHub Actions secret:
       #   Settings → Secrets → Actions → New repository secret
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}

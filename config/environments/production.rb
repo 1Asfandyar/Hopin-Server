@@ -49,7 +49,7 @@ Rails.application.configure do
   #   gem "sidekiq"
   #   config.active_job.queue_adapter = :sidekiq
   #
-  # config.active_job.queue_name_prefix = "hopin_production"
+  # config.active_job.queue_name_prefix = "mom_production"
 
   # ── Mailer ──────────────────────────────────────────────────────────────────
   config.action_mailer.perform_caching = false

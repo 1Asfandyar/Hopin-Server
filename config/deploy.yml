@@ -58,7 +58,7 @@ env:
   secret:
     # Resolved from .kamal/secrets at deploy time — never committed
     - RAILS_MASTER_KEY               # config/master.key content
-    - DATABASE_URL                   # postgres://user:pass@host/hopin_production
+    - DATABASE_URL                   # postgres://user:pass@host/mom_production
     - HOPIN_DATABASE_PASSWORD
 
 # ── kamal-proxy (replaces Nginx for most setups) ──────────────────────────────
@@ -85,7 +85,7 @@ healthcheck:
 # Active Storage uploads and SQLite (if ever used) need a persistent volume
 # that survives container restarts and deploys.
 volumes:
-  - hopin_storage:/rails/storage
+  - mom_storage:/rails/storage
 
 # ── Asset bridge ──────────────────────────────────────────────────────────────
 # Keeps the previous deploy's compiled assets alive during rolling deploys
@@ -108,12 +108,12 @@ accessories:
     port: "127.0.0.1:5432:5432"   # bind to localhost only — never expose DB publicly
     env:
       clear:
-        POSTGRES_DB: hopin_production
+        POSTGRES_DB: mom_production
       secret:
         - POSTGRES_USER
         - POSTGRES_PASSWORD
     volumes:
-      - hopin_postgres:/var/lib/postgresql/data
+      - mom_postgres:/var/lib/postgresql/data
     options:
       restart: always
       shm-size: 256m              # prevents shared memory errors under load
@@ -124,6 +124,6 @@ accessories:
   #   host: <your.server.ip>
   #   port: "127.0.0.1:6379:6379"
   #   volumes:
-  #     - hopin_redis:/data
+  #     - mom_redis:/data
   #   options:
   #     restart: always
