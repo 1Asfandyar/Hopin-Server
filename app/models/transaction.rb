@@ -46,7 +46,6 @@ class Transaction < ApplicationRecord
   validates :transaction_type, presence: true
   validates :visibility_type,  presence: true
 
-  validate :group_required_for_shared
   validate :transfer_account_required
   validate :transfer_accounts_must_differ
 
@@ -59,10 +58,6 @@ class Transaction < ApplicationRecord
   has_many   :transaction_splits, dependent: :destroy
 
   private
-
-  def group_required_for_shared
-    errors.add(:group_id, "is required") if shared? && group_id.blank?
-  end
 
   def transfer_account_required
     errors.add(:transfer_account_id, "is required") if transfer? && transfer_account_id.blank?
