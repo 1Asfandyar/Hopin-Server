@@ -9,6 +9,7 @@ module Api::V0::Users
         optional(:email).filled(:string)
         optional(:password).filled(:string)
         optional(:password_confirmation).filled(:string)
+        optional(:onboarding_completed).filled(:bool)
       end
 
       rule(:email).validate(:email_format)
