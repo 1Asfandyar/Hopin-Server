@@ -2,7 +2,7 @@
 
 module Transaction::Splits
   class Calculator
-    SUPPORTED = %w[equal exact percentage shares].freeze
+    SUPPORTED = TransactionSplit.split_methods.keys.freeze
 
     # Dispatch table — add a new entry here when introducing a new split method.
     STRATEGIES = {
