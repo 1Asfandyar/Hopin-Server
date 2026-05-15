@@ -1,7 +1,7 @@
 module Api::V0::Contracts::Transactions
   class Create < Api::V0::ApplicationContract
     ALLOWED_TYPES    = Transaction.transaction_types.keys.freeze
-    SUPPORTED_SPLITS = Transaction::Splits::Calculator::SUPPORTED.freeze
+    SUPPORTED_SPLITS = TransactionSplit.split_methods.keys.freeze
 
     params do
       required(:title).filled(:string)
