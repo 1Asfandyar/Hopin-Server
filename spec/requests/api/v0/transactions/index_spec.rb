@@ -46,12 +46,18 @@ RSpec.describe "Api::V0::Transactions", type: :request do
 
     context "when filtered by account_id" do
       let(:other_account)   { create(:account, user: user, currency: currency) }
+      let(:income_category) { create(:category, user: user, category_type: :income) }
       let(:request_headers) { headers.merge(auth_headers(user)) }
       let(:request_params)  { { account_id: account.id } }
 
       before do
-        create(:transaction, user: user, account: account, currency: currency)
-        create(:transaction, user: user, account: other_account, currency: currency)
+        account.update!(current_balance_cents: 60_000)
+        create(:transaction, user: user, account: account, currency: currency, category: category,
+               transaction_type: :expense, amount_cents: 2_000)
+        create(:transaction, user: user, account: account, currency: currency, category: income_category,
+               transaction_type: :income, amount_cents: 5_000)
+        create(:transaction, user: user, account: other_account, currency: currency, category: category,
+               transaction_type: :expense, amount_cents: 3_000)
       end
 
       it "returns only transactions for that account" do
@@ -59,6 +65,17 @@ RSpec.describe "Api::V0::Transactions", type: :request do
         expect(response).to have_http_status(:ok)
         account_ids = JSON.parse(response.body)["transactions"].map { |t| t["account_id"] }.uniq
         expect(account_ids).to eq([ account.id ])
+      end
+
+      it "returns metadata for the filtered transactions" do
+        get endpoint, params: request_params, headers: request_headers
+
+        body = JSON.parse(response.body)
+        expect(body["total_amount_cents"]).to eq(3_000)
+        expect(body["total_absolute_amount_cents"]).to eq(7_000)
+        expect(body["total_account_balance_cents"]).to eq(60_000)
+        expect(body["total_spent_cents"]).to eq(2_000)
+        expect(body["total_income_cents"]).to eq(5_000)
       end
     end
 

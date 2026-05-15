@@ -47,10 +47,9 @@ module Api::V0::Transactions
     def response_payload
       return transactions_by_category_payload if params[:by_category]
 
-      {
-        success: true,
+      metadata_payload.merge(
         transactions: Api::V0::TransactionSerializer.render_as_hash(transactions)
-      }
+      )
     end
 
     def transactions
@@ -59,13 +58,19 @@ module Api::V0::Transactions
 
     def transactions_by_category_payload
       {
+        **metadata_payload,
+        categories: category_summaries
+      }
+    end
+
+    def metadata_payload
+      {
         success: true,
         total_amount_cents: total_amount_cents,
         total_absolute_amount_cents: total_absolute_amount_cents,
         total_account_balance_cents: total_account_balance_cents,
         total_spent_cents: total_spent_cents,
-        total_income_cents: total_income_cents,
-        categories: category_summaries
+        total_income_cents: total_income_cents
       }
     end
 
