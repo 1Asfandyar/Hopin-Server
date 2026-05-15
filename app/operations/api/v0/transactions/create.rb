@@ -2,128 +2,7 @@ module Api::V0::Transactions
   class Create
     include Api::V0::ApplicationOperation
 
-    ALLOWED_TYPES    = Transaction.transaction_types.keys.freeze
-    SUPPORTED_SPLITS = Transaction::Splits::Calculator::SUPPORTED.freeze
-
-    class Contract < Api::V0::ApplicationContract
-      params do
-        required(:title).filled(:string)
-        required(:transaction_type).filled(:string)
-        required(:amount_cents).filled(:integer)
-        optional(:account_id).maybe(:integer)
-        optional(:category_id).maybe(:integer)
-        optional(:from_account_id).maybe(:integer)
-        optional(:to_account_id).maybe(:integer)
-        optional(:transaction_date).maybe(:string)
-        optional(:note).maybe(:string)
-        optional(:currency_id).maybe(:integer)
-
-        # shared expense fields
-        optional(:paid_by).maybe(:integer)
-        optional(:shared_by).maybe(:array)    # equal split: array of user IDs
-        optional(:user_shares).maybe(:array)  # exact split: array of { user_id:, share_amount_cents: }
-        optional(:split_method).maybe(:string)
-      end
-
-      rule(:transaction_type) do
-        key.failure("must be one of #{ALLOWED_TYPES.join(', ')}") unless ALLOWED_TYPES.include?(value)
-      end
-
-      rule(:amount_cents) do
-        key.failure("must be greater than 0") if value <= 0
-      end
-
-      rule(:transaction_date) do
-        next if value.nil?
-
-        Time.parse(value)
-      rescue ArgumentError, TypeError
-        key.failure("must be a valid ISO 8601 datetime")
-      end
-
-      # --- personal / shared expense ---
-
-      rule(:account_id) do
-        next if values[:transaction_type] == "transfer"
-        key.failure("is required") if value.nil?
-      end
-
-      rule(:category_id) do
-        next if values[:transaction_type] == "transfer"
-        key.failure("is required") if value.nil?
-      end
-
-      # --- transfer ---
-
-      rule(:from_account_id) do
-        next unless values[:transaction_type] == "transfer"
-        key.failure("is required for transfer") if value.nil?
-      end
-
-      rule(:to_account_id) do
-        next unless values[:transaction_type] == "transfer"
-        key.failure("is required for transfer") if value.nil?
-      end
-
-      rule(:from_account_id, :to_account_id) do
-        next unless value && values[:to_account_id]
-        key(:to_account_id).failure("must be different from from_account_id") if value == values[:to_account_id]
-      end
-
-      # --- shared expense: equal split (shared_by) ---
-
-      rule(:shared_by) do
-        next unless values[:transaction_type] == "expense" && !value.nil?
-        key.failure("must have at least one user") if value.empty?
-        key.failure("must be an array of integers") if value.any? { |v| !v.is_a?(Integer) }
-      end
-
-      # --- shared expense: exact split (user_shares) ---
-
-      rule(:user_shares) do
-        next if value.nil?
-        next unless values[:transaction_type] == "expense"
-
-        if value.empty?
-          key.failure("must not be empty")
-          next
-        end
-
-        invalid = value.any? { |s| !s.is_a?(Hash) || !s[:user_id].is_a?(Integer) }
-        if invalid
-          key.failure("each entry must have an integer user_id")
-          next
-        end
-
-        next unless values[:split_method] == "exact"
-
-        if value.any? { |s| !s[:share_amount_cents].is_a?(Integer) || s[:share_amount_cents] < 0 }
-          key.failure("each entry must have a non-negative integer share_amount_cents")
-          next
-        end
-
-        total = value.sum { |s| s[:share_amount_cents] }
-        key.failure("share amounts must sum to #{values[:amount_cents]}") unless total == values[:amount_cents]
-      end
-
-      # --- paid_by and split_method: required for any shared expense ---
-
-      rule(:paid_by) do
-        is_shared = values[:transaction_type] == "expense" &&
-                    (values[:shared_by]&.any? || values[:user_shares]&.any?)
-        next unless is_shared
-        key.failure("is required for shared expense") if value.nil?
-      end
-
-      rule(:split_method) do
-        is_shared = values[:transaction_type] == "expense" &&
-                    (values[:shared_by]&.any? || values[:user_shares]&.any?)
-        next unless is_shared
-        key.failure("is required for shared expense") if value.nil?
-        next if value.nil?
-        key.failure("must be one of: #{SUPPORTED_SPLITS.join(', ')}") unless SUPPORTED_SPLITS.include?(value)
-      end
-    end
+    Contract = Api::V0::Contracts::Transactions::Create
 
     def call(params, current_user:)
       @params       = params
@@ -216,7 +95,7 @@ module Api::V0::Transactions
       missing.empty? ? Success() : Failure(errors: { shared_by: [ "contains unknown user IDs: #{missing.join(', ')}" ] })
     end
 
-    # Exact split: validate all user_id values in user_shares exist.
+    # Non-equal split: validate all user_id values in user_shares exist.
     def find_user_shares_users
       user_ids  = params[:user_shares].map { |s| s[:user_id] }
       found_ids = User.where(id: user_ids).pluck(:id)
@@ -277,6 +156,10 @@ module Api::V0::Transactions
     end
 
     def persist_shared_expense
+      handle_service_result(Transaction::Shared::Create.call(**shared_expense_args))
+    end
+
+    def shared_expense_args
       base_args = {
         paid_by_user:     paid_by_user,
         split_method:     params[:split_method],
@@ -294,8 +177,7 @@ module Api::V0::Transactions
       else
         { user_shares: params[:user_shares].map { |s| s.transform_keys(&:to_sym) } }
       end
-
-      handle_service_result(Transaction::Shared::Create.call(**base_args, **extra))
+      base_args.merge(extra)
     end
 
     def handle_service_result(result)
