@@ -156,6 +156,10 @@ module Api::V0::Transactions
     end
 
     def persist_shared_expense
+      handle_service_result(Transaction::Shared::Create.call(**shared_expense_args))
+    end
+
+    def shared_expense_args
       base_args = {
         paid_by_user:     paid_by_user,
         split_method:     params[:split_method],
@@ -173,8 +177,7 @@ module Api::V0::Transactions
       else
         { user_shares: params[:user_shares].map { |s| s.transform_keys(&:to_sym) } }
       end
-
-      handle_service_result(Transaction::Shared::Create.call(**base_args, **extra))
+      base_args.merge(extra)
     end
 
     def handle_service_result(result)
