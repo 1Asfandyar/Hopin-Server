@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -75,8 +75,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_000002) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id", null: false
     t.text "description"
+    t.integer "kind", default: 0, null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["created_by_id", "kind"], name: "index_groups_on_created_by_id_and_friends_kind", unique: true, where: "(kind = 1)"
     t.index ["created_by_id"], name: "index_groups_on_created_by_id"
   end
 

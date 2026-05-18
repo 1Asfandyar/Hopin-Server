@@ -10,7 +10,8 @@ module Api::V0
 
     api :GET, "/v0/groups", "List groups for the current user"
     description <<~DESC
-      Returns all groups the authenticated user belongs to, including groups they created.
+      Returns groups the authenticated user belongs to, filtered by required `kind`.
+      Use `kind=friends` to fetch the default friends group or `kind=custom` to fetch custom groups.
 
       **TypeScript Types**
 
@@ -25,6 +26,7 @@ module Api::V0
         id: number;
         name: string;
         description: string | null;
+        kind: "custom" | "friends";
         created_by_id: number;
         created_at: string; // ISO 8601
         updated_at: string; // ISO 8601
@@ -42,13 +44,16 @@ module Api::V0
       };
       ```
     DESC
+    param :kind, String, required: true, description: "Group kind filter: custom or friends"
     error code: 401, desc: "Unauthorized — missing or invalid JWT"
+    error code: 422, desc: "Validation errors"
     returns code: 200, desc: "Success" do
       param :success, :bool, desc: "Operation status"
       param :groups, Array, desc: "List of groups the user belongs to" do
         param :id, Integer, desc: "Group ID"
         param :name, String, desc: "Group name"
         param :description, String, desc: "Group description"
+        param :kind, String, desc: "Group kind: custom or friends"
         param :created_by_id, Integer, desc: "ID of the user who created the group"
         param :created_at, String, desc: "ISO 8601 creation timestamp"
         param :updated_at, String, desc: "ISO 8601 last-update timestamp"
@@ -66,6 +71,7 @@ module Api::V0
     def index
       Api::V0::Groups::Index.call(params.to_unsafe_h, current_user: current_user) do |result|
         result.success { |data| render json: data, status: :ok }
+        result.failure { |errors| unprocessable_entity(errors) }
       end
     end
 
@@ -92,6 +98,7 @@ module Api::V0
         id: number;
         name: string;
         description: string | null;
+        kind: "custom" | "friends";
         created_by_id: number;
         created_at: string; // ISO 8601
         updated_at: string; // ISO 8601
@@ -120,6 +127,7 @@ module Api::V0
         param :id, Integer, desc: "Group ID"
         param :name, String, desc: "Group name"
         param :description, String, desc: "Group description"
+        param :kind, String, desc: "Group kind: custom or friends"
         param :created_by_id, Integer, desc: "ID of the user who created the group"
         param :created_at, String, desc: "ISO 8601 creation timestamp"
         param :updated_at, String, desc: "ISO 8601 last-update timestamp"
@@ -166,6 +174,7 @@ module Api::V0
         id: number;
         name: string;
         description: string | null;
+        kind: "custom" | "friends";
         created_by_id: number;
         created_at: string; // ISO 8601
         updated_at: string; // ISO 8601
@@ -186,6 +195,7 @@ module Api::V0
         param :id, Integer, desc: "Group ID"
         param :name, String, desc: "Group name"
         param :description, String, desc: "Group description"
+        param :kind, String, desc: "Group kind: custom or friends"
         param :created_by_id, Integer, desc: "ID of the user who created the group"
         param :created_at, String, desc: "ISO 8601 creation timestamp"
         param :updated_at, String, desc: "ISO 8601 last-update timestamp"
@@ -264,6 +274,7 @@ module Api::V0
         id: number;
         name: string;
         description: string | null;
+        kind: "custom" | "friends";
         created_by_id: number;
         created_at: string; // ISO 8601
         updated_at: string; // ISO 8601
@@ -293,6 +304,7 @@ module Api::V0
         param :id, Integer, desc: "Group ID"
         param :name, String, desc: "Group name"
         param :description, String, desc: "Group description"
+        param :kind, String, desc: "Group kind: custom or friends"
         param :created_by_id, Integer, desc: "ID of the user who created the group"
         param :created_at, String, desc: "ISO 8601 creation timestamp"
         param :updated_at, String, desc: "ISO 8601 last-update timestamp"

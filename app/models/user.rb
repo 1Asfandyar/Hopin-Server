@@ -43,10 +43,17 @@ class User < ApplicationRecord
   has_many :transaction_splits
   has_many :groups_users
   has_many :groups, through: :groups_users
+  has_many :created_groups, class_name: "Group", foreign_key: :created_by_id, inverse_of: :created_by
+  has_one :friends_group,
+          -> { friends },
+          class_name: "Group",
+          foreign_key: :created_by_id,
+          inverse_of: :created_by
   has_many :debts_from, class_name: "Debt", foreign_key: :from_user_id
   has_many :debts_to,   class_name: "Debt", foreign_key: :to_user_id
 
   after_create :assign_default_categories
+  after_create :assign_default_friends_group
 
   def admin?
     role == "admin"
@@ -64,5 +71,9 @@ class User < ApplicationRecord
 
   def assign_default_categories
     Categories::AssignDefaults.call(self)
+  end
+
+  def assign_default_friends_group
+    Groups::AssignDefaultFriendsGroup.call(self)
   end
 end

@@ -19,6 +19,9 @@ enum visibility_type:  { personal: 0, shared: 1 }
 
 # TransactionSplit
 enum split_method: { equal: 0, percentage: 1, shares: 2, exact: 3 }
+
+# Group
+enum kind: { custom: 0, friends: 1 }
 ```
 
 ---
@@ -44,6 +47,8 @@ has_many :transactions
 has_many :transaction_splits
 has_many :groups_users
 has_many :groups, through: :groups_users
+has_many :created_groups, class_name: 'Group', foreign_key: :created_by_id
+has_one  :friends_group, -> { friends }, class_name: 'Group', foreign_key: :created_by_id
 has_many :debts_from, class_name: 'Debt', foreign_key: :from_user_id
 has_many :debts_to,   class_name: 'Debt', foreign_key: :to_user_id
 ```
@@ -125,11 +130,15 @@ has_many   :transactions
 | created_by_id | bigint   | false | FK → users       |
 | name          | string   | false |                  |
 | description   | text     | true  |                  |
+| kind          | integer  | false | custom / friends |
 | created_at    | datetime | false |                  |
 | updated_at    | datetime | false |                  |
 
 ```ruby
+enum kind: { custom: 0, friends: 1 }
+
 validates :name, presence: true
+validates :kind, presence: true
 
 belongs_to :created_by, class_name: 'User'
 has_many   :groups_users

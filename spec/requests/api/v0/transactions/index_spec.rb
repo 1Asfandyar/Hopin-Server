@@ -158,6 +158,52 @@ RSpec.describe "Api::V0::Transactions", type: :request do
       end
     end
 
+    context "when grouped by friends" do
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params)  { { by_friends: true } }
+      let(:friend_one)      { create(:user, full_name: "Friend One") }
+      let(:friend_two)      { create(:user, full_name: "Friend Two") }
+      let(:friend_account)  { create(:account, user: friend_one, currency: currency) }
+      let(:friend_category) { create(:category, user: friend_one) }
+
+      before do
+        paid_by_user = create(:transaction, :shared, user: user, account: account, currency: currency, category: category,
+                              title: "Dinner", amount_cents: 3_000)
+        paid_by_user.transaction_splits.create!(user: user, split_method: :equal, owed_amount_cents: 1_000)
+        paid_by_user.transaction_splits.create!(user: friend_one, split_method: :equal, owed_amount_cents: 1_000)
+        paid_by_user.transaction_splits.create!(user: friend_two, split_method: :equal, owed_amount_cents: 1_000)
+
+        paid_by_friend = create(:transaction, :shared, user: friend_one, account: friend_account, currency: currency,
+                                category: friend_category, title: "Taxi", amount_cents: 2_000)
+        paid_by_friend.transaction_splits.create!(user: user, split_method: :equal, owed_amount_cents: 1_000)
+        paid_by_friend.transaction_splits.create!(user: friend_one, split_method: :equal, owed_amount_cents: 1_000)
+
+        create(:transaction, user: user, account: account, currency: currency, category: category, title: "Personal")
+      end
+
+      it "returns friends with their shared transactions" do
+        get endpoint, params: request_params, headers: request_headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response).to match_json_schema("transactions/by_friends_response")
+      end
+
+      it "groups shared transactions involving the current user by friend" do
+        get endpoint, params: request_params, headers: request_headers
+
+        friends = JSON.parse(response.body)["friends"]
+        friend_one_summary = friends.find { |summary| summary.dig("friend", "id") == friend_one.id }
+        friend_two_summary = friends.find { |summary| summary.dig("friend", "id") == friend_two.id }
+
+        expect(friend_one_summary["transactions"].map { |transaction| transaction["title"] })
+          .to contain_exactly("Dinner", "Taxi")
+        expect(friend_two_summary["transactions"].map { |transaction| transaction["title"] })
+          .to contain_exactly("Dinner")
+        expect(friends.flat_map { |summary| summary["transactions"] }.map { |transaction| transaction["title"] })
+          .not_to include("Personal")
+      end
+    end
+
     context "when filtered by category_id" do
       let(:other_category)  { create(:category, user: user) }
       let(:request_headers) { headers.merge(auth_headers(user)) }
@@ -257,6 +303,16 @@ RSpec.describe "Api::V0::Transactions", type: :request do
     context "when date_to is not a valid datetime" do
       let(:request_headers) { headers.merge(auth_headers(user)) }
       let(:request_params)  { { date_to: "bad-date" } }
+
+      it "returns 422 and matches error schema" do
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to match_json_schema("error_response")
+      end
+    end
+
+    context "when by_category and by_friends are both true" do
+      let(:request_headers) { headers.merge(auth_headers(user)) }
+      let(:request_params)  { { by_category: true, by_friends: true } }
 
       it "returns 422 and matches error schema" do
         expect(response).to have_http_status(:unprocessable_entity)
