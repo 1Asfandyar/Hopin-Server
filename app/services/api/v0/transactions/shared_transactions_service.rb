@@ -30,9 +30,9 @@ module Api::V0::Transactions
         friends_for(transaction).each do |friend|
           split = transaction.transaction_splits.find { |s| s.user_id == friend.id }
           split_amount = split&.owed_amount_cents || 0
-          
+
           transaction.define_singleton_method(:split_amount_cents) { split_amount }
-          
+
           grouped[friend] ||= []
           grouped[friend] << transaction
         end
@@ -53,7 +53,7 @@ module Api::V0::Transactions
     end
 
     def friends_for(transaction)
-      ([transaction.user] + transaction.transaction_splits.map(&:user))
+      ([ transaction.user ] + transaction.transaction_splits.map(&:user))
         .compact
         .uniq
         .reject { |user| user.id == current_user.id }

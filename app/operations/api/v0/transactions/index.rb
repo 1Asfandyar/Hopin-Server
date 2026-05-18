@@ -46,9 +46,9 @@ module Api::V0::Transactions
 
     def response_payload
       case params[:type]
-      when 'shared'
+      when "shared"
         Api::V0::Transactions::SharedTransactionsService.new(current_user, params).call
-      when 'personal'
+      when "personal"
         Api::V0::Transactions::PersonalTransactionsService.new(current_user, params).call
       else # 'none'
         transactions.each { |t| t.define_singleton_method(:split_amount_cents) { 0 } }

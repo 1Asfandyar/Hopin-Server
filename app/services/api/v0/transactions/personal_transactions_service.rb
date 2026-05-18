@@ -38,7 +38,7 @@ module Api::V0::Transactions
 
     def categorized_transactions
       @categorized_transactions ||= category_transactions.map do |transaction|
-        is_income = transaction.category.category_type == 'income'
+        is_income = transaction.category.category_type == "income"
         signed_amount = is_income ? transaction.amount_cents : -transaction.amount_cents
         {
           transaction: transaction,
@@ -52,7 +52,7 @@ module Api::V0::Transactions
     def category_transactions
       @category_transactions ||= filtered_transactions
         .where.not(category_id: nil)
-        .where(transaction_type: [:expense, :income])
+        .where(transaction_type: [ :expense, :income ])
     end
 
     def filtered_transactions

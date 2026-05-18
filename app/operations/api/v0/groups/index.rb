@@ -28,7 +28,12 @@ module Api::V0::Groups
 
     def groups
       scope = current_user.groups.includes(:groups_users, :users)
-      scope.public_send(params[:kind])
+
+      if params[:kind] == "custom"
+        scope.custom
+      else
+        scope.friends
+      end
     end
   end
 end
