@@ -36,11 +36,10 @@
     },
     "transaction": {
       "type": "object",
-      "required": ["id", "title", "amount_cents", "transaction_type", "visibility_type", "transaction_date", "account_id", "currency_id", "user_id", "created_at", "updated_at"],
+      "required": ["id", "title", "transaction_type", "visibility_type", "transaction_date", "account_id", "currency_id", "user_id", "created_at", "updated_at"],
       "properties": {
         "id":                  { "type": "integer" },
         "title":               { "type": "string" },
-        "amount_cents":        { "type": "integer" },
         "transaction_type":    { "type": "string" },
         "visibility_type":     { "type": "string" },
         "transaction_date":    { "type": "string" },

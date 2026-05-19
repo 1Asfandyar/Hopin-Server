@@ -4,12 +4,17 @@ module Api::V0::Transactions
 
     class Contract < Api::V0::ApplicationContract
       params do
-        required(:account_id).value(:integer)
         required(:type).value(included_in?: %w[shared personal none])
+        optional(:account_id).maybe(:integer)
         optional(:category_id).maybe(:integer)
         optional(:date_from).maybe(:string)
         optional(:date_to).maybe(:string)
         optional(:search).maybe(:string)
+      end
+
+      rule(:account_id) do
+        next unless values[:type] == "personal"
+        key.failure("is required for type personal") if value.nil?
       end
 
       rule(:date_from) do
@@ -68,7 +73,7 @@ module Api::V0::Transactions
     end
 
     def apply_filters(scope)
-      scope = scope.where(account_id: params[:account_id])
+      scope = scope.where(account_id: params[:account_id]) if params[:account_id]
       scope = scope.where(category_id: params[:category_id]) if params[:category_id]
       scope = scope.where("transaction_date >= ?", Time.parse(params[:date_from])) if params[:date_from]
       scope = scope.where("transaction_date <= ?", Time.parse(params[:date_to]))   if params[:date_to]

@@ -60,7 +60,6 @@ module Api::V0::Transactions
     end
 
     def apply_filters(scope)
-      scope = scope.where(account_id: params[:account_id])
       scope = scope.where(category_id: params[:category_id]) if params[:category_id]
       scope = scope.where("transaction_date >= ?", Time.parse(params[:date_from])) if params[:date_from]
       scope = scope.where("transaction_date <= ?", Time.parse(params[:date_to]))   if params[:date_to]

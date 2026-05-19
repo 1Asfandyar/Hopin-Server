@@ -42,14 +42,18 @@ RSpec.describe "Api::V0::Groups", type: :request do
     end
 
     context "when filtering by custom kind" do
-      let(:request_headers) { headers.merge(auth_headers(user)) }
-      let(:endpoint)        { "/api/v0/groups?kind=custom" }
-      let!(:custom_group_one) { create(:group, created_by: user, name: "Trip") }
-      let!(:custom_group_two) { create(:group, created_by: user, name: "Home") }
-      let!(:membership_one) { create(:groups_user, group: custom_group_one, user: user) }
-      let!(:membership_two) { create(:groups_user, group: custom_group_two, user: user) }
-      let!(:other_group) { create(:group, created_by: other_user, name: "Hidden") }
-      let!(:other_membership) { create(:groups_user, group: other_group, user: other_user) }
+      let(:request_headers)  { headers.merge(auth_headers(user)) }
+      let(:endpoint)         { "/api/v0/groups?kind=custom" }
+      let(:custom_group_one) { create(:group, created_by: user, name: "Trip") }
+      let(:custom_group_two) { create(:group, created_by: user, name: "Home") }
+
+      before do
+        create(:groups_user, group: custom_group_one, user: user)
+        create(:groups_user, group: custom_group_two, user: user)
+        other_group = create(:group, created_by: other_user, name: "Hidden")
+        create(:groups_user, group: other_group, user: other_user)
+        get endpoint, headers: request_headers
+      end
 
       it "returns 200 and matches schema" do
         expect(response).to have_http_status(:ok)

@@ -9,7 +9,7 @@ RSpec.describe User, type: :model do
 
       expect(group).to be_friends
       expect(group.name).to eq("#{user.full_name}'s Friends")
-      expect(group.description).to eq("Default group for all friends.")
+      expect(group.description).to eq("Default Friend's Group")
       expect(group.users).to contain_exactly(user)
     end
 
