@@ -1,10 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["success", "group"],
+  "required": ["success", "groups"],
   "properties": {
     "success": { "type": "boolean", "enum": [true] },
-    "group": { "$ref": "#/definitions/group" }
+    "groups": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/group" }
+    }
   },
   "definitions": {
     "group": {

@@ -6,6 +6,7 @@ namespace :api do
 
     get   "me", to: "users#me"
     patch "me", to: "users#update_me"
+    get   "users", to: "users#index"
 
     resources :currencies, only: [ :index ]
     resources :accounts
