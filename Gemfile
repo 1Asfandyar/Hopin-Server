@@ -45,6 +45,7 @@ gem "pagy"                    # fast pagination for API layer
 
 # ─── Background Jobs ──────────────────────────────────────────────────────────
 gem "solid_queue"
+gem "mission_control-jobs"
 
 # ─── Development + Test ───────────────────────────────────────────────────────
 group :development, :test do
